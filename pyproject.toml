@@ -14,3 +14,7 @@ dependencies = [
     "uvicorn>=0.40.0",
     "yandex-music>=2.2.0",
 ]
+
+# Указываем setuptools, где искать пакеты
+[tool.setuptools]
+packages = [{ include = "src" }]
