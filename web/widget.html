@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<style>
+body {
+  margin: 0;
+  background: transparent;
+  color: white;
+  font-family: sans-serif;
+}
+#wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+img {
+  width: 64px;
+  height: 64px;
+}
+</style>
+</head>
+<body>
+<div id="wrap"></div>
+
+<script>
+async function update() {
+  const res = await fetch("http://127.0.0.1:8000/track");
+  const t = await res.json();
+  if (!t.title) return;
+
+  document.getElementById("wrap").innerHTML = `
+    <img src="${t.cover}">
+    <div>${t.artists.join(", ")} — ${t.title}</div>
+  `;
+}
+
+setInterval(update, 1000);
+</script>
+</body>
+</html>
