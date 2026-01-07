@@ -1,8 +1,8 @@
 import threading
 import time
 
-from services.spotify import get_now_playing as spotify_now
-from services.yandex import get_now_playing as yandex_now
+from trackcast.services.spotify import get_now_playing as spotify_now
+from trackcast.services.yandex import get_now_playing as yandex_now
 
 
 class TrackManager:

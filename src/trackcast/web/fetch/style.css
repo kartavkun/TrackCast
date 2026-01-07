@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+
+body {
+  margin: 0;
+  background: transparent;
+  font-family: 'Fira Code', monospace;
+  padding: 20px;
+}
+
+/* Основной контейнер — теперь это окно терминала */
+#wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 25px;
+  background: rgba(24, 24, 24, 1);
+  padding: 45px 25px 25px 25px; /* Сверху отступ больше под шапку */
+  border-radius: 10px;
+  border: 1px solid #444;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+  position: relative;
+  width: fit-content;
+  min-width: 400px;
+}
+
+/* Рисуем шапку терминала и кнопки через псевдоэлемент */
+#wrap::before {
+  content: "● ● ●  user@stream: ~/music";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: #333;
+  color: #888;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  padding-left: 15px;
+  border-radius: 9px 9px 0 0;
+}
+
+/* Обложка — как ASCII/Image блок в neofetch */
+#wrap img {
+  width: 140px;
+  height: 140px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 2px solid #50fa7b; /* Зеленая рамка вокруг "арта" */
+}
+
+/* Блок с текстом */
+.track-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #f8f8f2;
+}
+
+/* Имитация ввода команды перед данными */
+.track-info::before {
+  content: "$ ./trackcast --now-playing";
+  color: #f1fa8c;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+/* Название трека */
+.track-info .title {
+  font-weight: bold;
+  font-size: 16px;
+  color: #8be9fd;
+}
+
+.track-info .title::before {
+  content: "TITLE:   ";
+  color: #ff79c6; /* Розовый лейбл */
+}
+
+/* Артисты */
+.track-info .artists {
+  font-size: 14px;
+  color: #f8f8f2;
+}
+
+.track-info .artists::before {
+  content: "ARTIST:  ";
+  color: #ff79c6;
+}
+
+/* Добавим фейковую инфу снизу для веса (опционально) */
+.track-info::after {
+  content: "\A STATUS:  playing\A UPTIME:  Forever\A \A █▓▒░  ░▒▓█";
+  white-space: pre; /* Чтобы работали переносы строк \A */
+  color: #6272a4;
+  font-size: 12px;
+  margin-top: 10px;
+}

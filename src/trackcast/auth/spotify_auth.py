@@ -1,3 +1,4 @@
+import os
 import keyring as kr
 import spotipy.util as util
 

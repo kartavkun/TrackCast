@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from pathlib import Path
+from fastapi.responses import HTMLResponse, Response
+import importlib.resources as pkg_resources
 
-from track_manager import manager
+from trackcast.track_manager import manager
+import trackcast.web  # <- пакет web, где лежат index.html, style.css, script.js
 
 app = FastAPI()
 
@@ -14,12 +15,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ----------------------
+# API текущего трека
+# ----------------------
 @app.get("/track")
 def get_track():
     return manager.get_track() or {}
 
-# новый роут для HTML виджета
+# ----------------------
+# HTML виджет
+# ----------------------
 @app.get("/widget")
 def widget():
-    widget_path = Path(__file__).parent / "web" / "widget.html"
-    return FileResponse(widget_path, media_type="text/html")
+    html_bytes = pkg_resources.read_binary(trackcast.web, "index.html")
+    html_str = html_bytes.decode("utf-8")
+    return HTMLResponse(content=html_str)
+
+# ----------------------
+# CSS виджет
+# ----------------------
+@app.get("/widget/style.css")
+def widget_css():
+    css_bytes = pkg_resources.read_binary(trackcast.web, "style.css")
+    return Response(content=css_bytes, media_type="text/css")
+
+# ----------------------
+# JS виджет
+# ----------------------
+@app.get("/widget/script.js")
+def widget_js():
+    js_bytes = pkg_resources.read_binary(trackcast.web, "script.js")
+    return Response(content=js_bytes, media_type="application/javascript")

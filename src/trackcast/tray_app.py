@@ -1,5 +1,8 @@
 import sys
 import threading
+import os
+import getpass
+from pathlib import Path
 
 import uvicorn
 from PySide6.QtWidgets import (
@@ -16,14 +19,14 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QIcon, QCursor
 from PySide6.QtCore import Qt
 
-from track_manager import manager
-from app import app
+from trackcast.track_manager import manager
+from trackcast.app import app
 
-from auth.spotify_auth import (
+from trackcast.auth.spotify_auth import (
     has_token as spotify_has_token,
     authorize as spotify_authorize
 )
-from auth.yandex_auth import (
+from trackcast.auth.yandex_auth import (
     has_token as yandex_has_token,
     save_token as yandex_save_token
 )
@@ -32,7 +35,6 @@ from auth.yandex_auth import (
 # ======================
 # FastAPI runner
 # ======================
-
 def run_api():
     uvicorn.run(
         app,
@@ -45,32 +47,38 @@ def run_api():
 # ======================
 # Main window
 # ======================
-
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle("TrackCast")
-        self.setFixedSize(400, 200)
+        self.setFixedSize(400, 250)
 
+        # Кнопки
         self.btn_yandex = QPushButton()
         self.btn_spotify = QPushButton()
+        self.btn_reset_tokens = QPushButton("Сбросить токены")  # новая кнопка
 
-        self.obs_label = QLabel()  # для ссылки OBS
+        # OBS label
+        self.obs_label = QLabel()
         self.obs_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
-        self.obs_label.setOpenExternalLinks(False)  # ловим клик сами
+        self.obs_label.setOpenExternalLinks(False)
         self.obs_label.setStyleSheet("color: blue; text-decoration: underline;")
         self.obs_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.obs_label.hide()
         self.obs_label.mousePressEvent = self.copy_obs_link
 
+        # Layout
         layout = QVBoxLayout(self)
         layout.addWidget(self.btn_yandex)
         layout.addWidget(self.btn_spotify)
+        layout.addWidget(self.btn_reset_tokens)
         layout.addWidget(self.obs_label)
 
+        # Handlers
         self.btn_yandex.clicked.connect(self.handle_yandex)
         self.btn_spotify.clicked.connect(self.handle_spotify)
+        self.btn_reset_tokens.clicked.connect(self.reset_tokens)
 
         self.update_buttons()
 
@@ -133,8 +141,6 @@ class MainWindow(QWidget):
     def connect_yandex(self):
         msg = QMessageBox(self)
         msg.setWindowTitle("Yandex Music")
-
-        # Кликабельные ссылки через HTML
         msg.setTextFormat(Qt.TextFormat.RichText)
         msg.setText(
             "Установите расширение для браузера:<br>"
@@ -163,16 +169,56 @@ class MainWindow(QWidget):
         if manager.active_service:
             clipboard = QApplication.clipboard()
             clipboard.setText("http://127.0.0.1:8000/widget")
-            # Всплывающее уведомление
             msg = QMessageBox(self)
             msg.setWindowTitle("Скопировано")
             msg.setText("Ссылка для OBS скопирована в буфер!")
             msg.setStandardButtons(QMessageBox.Ok)
             msg.exec()
 
+    # ---------- Reset tokens ----------
+    def reset_tokens(self):
+        reply = QMessageBox.question(
+            self,
+            "Сброс токенов",
+            "Вы уверены, что хотите удалить токены Spotify и Yandex? Это потребует повторной авторизации.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        import keyring as kr
+
+        # --- Yandex ---
+        try:
+            kr.delete_password("TrackCast", "YANDEX_TOKEN")
+        except Exception as e:
+            print(f"[ResetTokens] Failed to remove Yandex token: {e}")
+
+        # --- Spotify ---
+        try:
+            kr.delete_password("TrackCast", "SPOTIFY_TOKEN")
+        except Exception as e:
+            print(f"[ResetTokens] Failed to remove Spotify token: {e}")
+
+        # Удаляем .cache-USERNAME (Spotipy)
+        try:
+            username = getpass.getuser()
+            cache_file = Path(f".cache-{username}")
+            if cache_file.exists():
+                cache_file.unlink()
+        except Exception as e:
+            print(f"[ResetTokens] Failed to remove Spotipy cache: {e}")
+
+        QMessageBox.information(
+            self,
+            "Сброс токенов",
+            "Токены успешно удалены. Вам нужно будет снова авторизоваться."
+        )
+
+        self.update_buttons()
+
     # ---------- Tray behaviour ----------
     def closeEvent(self, event):
-        # закрытие окна ≠ выход из приложения
         event.ignore()
         self.hide()
 
@@ -180,9 +226,7 @@ class MainWindow(QWidget):
 # ======================
 # Entry point
 # ======================
-
 def main():
-    # FastAPI в фоне
     threading.Thread(target=run_api, daemon=True).start()
 
     qt_app = QApplication(sys.argv)
