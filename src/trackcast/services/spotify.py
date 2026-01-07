@@ -1,5 +1,5 @@
 import spotipy
-from auth.spotify_auth import get_valid_token
+from ..auth.spotify_auth import get_valid_token
 
 def get_now_playing():
     token = get_valid_token()
