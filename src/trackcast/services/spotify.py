@@ -1,8 +1,8 @@
 import spotipy
-import keyring as kr
+from auth.spotify_auth import get_valid_token
 
 def get_now_playing():
-    token = kr.get_password("TrackCast", "SPOTIFY_TOKEN")
+    token = get_valid_token()
     if not token:
         return None
 
